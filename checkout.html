@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>確認繳費 | 2027 星空探險計畫</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-light-mint: #E0EDE7;     
+            --primary-teal: #2F6662;      
+            --primary-dark: #1F4542;
+            --accent-gold: #D4B254;       
+            --accent-lime: #CCFF00;       
+            
+            --glass-bg: rgba(255, 255, 255, 0.95); 
+            --glass-border: rgba(255, 255, 255, 0.9);
+            --night-sky-blue: #0A1A18; 
+            
+            --text-dark: #1A2625;
+            --text-muted: #5D706E;
+            --shadow-soft: 0 15px 40px rgba(20, 46, 43, 0.08);
+            --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-light-mint);
+            color: var(--text-dark);
+            font-family: 'Noto Sans TC', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ====== 沉浸式 3D 星空背景 ====== */
+        .perspective-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 0;
+            background: linear-gradient(180deg, #E0EDE7 0%, #8FB3AC 40%, var(--night-sky-blue) 100%);
+            display: flex; justify-content: center; align-items: flex-end;
+            perspective: 1200px; overflow: hidden;
+        }
+        .perspective-bg::before {
+            content: ""; position: absolute; width: 200%; height: 200%;
+            top: -50%; left: -50%;
+            background-image: radial-gradient(white, rgba(255,255,255,.3) 2px, transparent 4px),
+                              radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 3px);
+            background-size: 450px 450px, 250px 250px; background-position: 0 0, 40px 60px;
+            animation: starScroll 150s linear infinite; opacity: 0.6;
+        }
+        @keyframes starScroll { from { transform: translate(0, 0); } to { transform: translate(150px, 150px); } }
+
+        .bridge-floor {
+            position: absolute; bottom: -15vh; width: 120vw; height: 85vh;
+            background: linear-gradient(to top, var(--primary-dark) 0%, rgba(47,102,98,0.85) 60%, transparent 100%);
+            transform-origin: bottom center; transform: rotateX(80deg) translateX(-10vw);
+            background-image: 
+                linear-gradient(90deg, transparent 49%, var(--accent-gold) 49%, var(--accent-gold) 51%, transparent 51%),
+                linear-gradient(90deg, transparent 15%, rgba(212,178,84,0.3) 15%, rgba(212,178,84,0.3) 18%, transparent 18%);
+            background-size: 100% 120px; animation: glowMove 2.5s linear infinite;
+        }
+        @keyframes glowMove { from { background-position: 0 0; } to { background-position: 0 120px; } }
+
+        /* ====== 頂部導覽列 (加入返回鍵) ====== */
+        nav.top-nav {
+            background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px);
+            padding: 18px 50px; display: flex; justify-content: center; align-items: center; 
+            border-bottom: 2px solid var(--accent-gold); box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .nav-logo { font-weight: 900; font-size: 1.5rem; color: var(--primary-dark); display: flex; align-items: center; gap: 10px; letter-spacing: 1px;}
+        
+        .nav-back {
+            position: absolute; left: 40px; display: flex; align-items: center; gap: 8px;
+            color: var(--primary-teal); text-decoration: none; font-weight: 800; font-size: 1.05rem;
+            transition: var(--transition-smooth); background: rgba(47, 102, 98, 0.05);
+            padding: 8px 18px; border-radius: 50px; border: 1px solid transparent;
+        }
+        .nav-back:hover { background: var(--primary-teal); color: #fff; transform: translateX(-5px); border-color: var(--primary-teal); box-shadow: 0 5px 15px rgba(47, 102, 98, 0.2);}
+
+        /* ====== 結帳主容器 ====== */
+        main { flex-grow: 1; display: flex; justify-content: center; padding: 50px 20px; position: relative; z-index: 10; }
+
+        .checkout-container {
+            display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px;
+            max-width: 1100px; width: 100%;
+        }
+
+        .checkout-card {
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px; border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft); padding: 50px;
+        }
+
+        .section-title { 
+            font-size: 1.8rem; color: var(--primary-dark); margin-bottom: 35px; 
+            font-weight: 900; text-align: center; letter-spacing: 2px;
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+        }
+        .section-title::after {
+            content: ''; display: block; width: 60px; height: 5px; 
+            background: linear-gradient(90deg, var(--accent-gold), #fef08a); border-radius: 5px;
+        }
+
+        /* 步驟指示器 */
+        .step-indicator { 
+            display: flex; justify-content: center; align-items: center; gap: 15px; 
+            margin-bottom: 45px; color: #a3b5b2; font-weight: 800; font-size: 1rem; position: relative;
+        }
+        .step { display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; z-index: 1;}
+        .step.active { color: var(--primary-teal); }
+        .step.done { color: var(--primary-teal); }
+        .step-num { 
+            width: 36px; height: 36px; border-radius: 50%; background: #e0e0e0; color: #fff; 
+            display: flex; justify-content: center; align-items: center; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s;
+        }
+        .step.active .step-num { background: var(--primary-teal); box-shadow: 0 0 0 5px rgba(47, 102, 98, 0.15); }
+        .step.done .step-num { background: var(--accent-gold); }
+        .step-line { height: 3px; width: 60px; background: #e0e0e0; margin-bottom: 25px; border-radius: 2px;}
+        .step-line.active { background: var(--accent-gold); }
+
+        /* 訂單明細 */
+        .order-row { display: flex; justify-content: space-between; margin-bottom: 18px; font-size: 1.05rem; border-bottom: 1px dashed rgba(47, 102, 98, 0.1); padding-bottom: 10px;}
+        .order-row:last-child { border-bottom: none; }
+        .order-row .label { color: var(--text-muted); font-weight: 700; }
+        .order-row .value { color: var(--text-dark); font-weight: 800; text-align: right; max-width: 60%; line-height: 1.4;}
+        
+        .order-total {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 30px; padding-top: 25px; border-top: 3px dashed rgba(47, 102, 98, 0.2);
+        }
+        .order-total .label { color: var(--text-dark); font-weight: 900; font-size: 1.3rem; }
+        .order-total .value { color: #D93838; font-weight: 900; font-size: 2rem; }
+
+        /* 信用卡表單 & 膠囊按鈕 */
+        .payment-methods { display: flex; gap: 15px; margin-bottom: 35px; background: rgba(47,102,98,0.05); padding: 8px; border-radius: 16px;}
+        .method-label {
+            flex: 1; border-radius: 12px; padding: 15px;
+            text-align: center; font-weight: 800; color: var(--text-muted); cursor: pointer; transition: 0.3s;
+        }
+        .method-label:hover { color: var(--primary-teal); }
+        .method-label.selected { background: #fff; color: var(--primary-teal); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; margin-bottom: 10px; color: var(--primary-dark); font-weight: 800; font-size: 1.05rem; }
+        input { 
+            width: 100%; padding: 18px 20px; background: #fff; border: 2px solid #e0e0e0;
+            border-radius: 12px; font-size: 1.15rem; color: var(--text-dark); font-family: monospace; letter-spacing: 2px; transition: var(--transition-smooth); font-weight: 700;
+        }
+        input::placeholder { color: #bccac7; font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0; font-weight: 500;}
+        input:focus { outline: none; border-color: var(--primary-teal); box-shadow: 0 0 0 5px rgba(47,102,98,0.1); transform: translateY(-2px);}
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        .submit-btn { 
+            width: 100%; padding: 22px; background: var(--primary-teal);
+            color: #fff; border: none; border-radius: 14px; font-size: 1.3rem; font-weight: 900;
+            letter-spacing: 2px; cursor: pointer; transition: var(--transition-smooth); margin-top: 20px; box-shadow: 0 8px 25px rgba(47, 102, 98, 0.2);
+            position: relative; overflow: hidden;
+        }
+        .submit-btn:hover { background: var(--primary-dark); transform: translateY(-3px); box-shadow: 0 12px 35px rgba(47, 102, 98, 0.3); }
+        .submit-btn::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg); transition: 0s;
+        }
+        .submit-btn:hover::after { left: 200%; transition: 0.6s ease-in-out; }
+
+        .security-badge {
+            margin-top: 30px; font-size: 0.95rem; color: var(--primary-dark); background: rgba(204, 255, 0, 0.15); 
+            padding: 20px; border-radius: 12px; font-weight: 700; display: flex; align-items: flex-start; gap: 10px; border: 1px solid rgba(204, 255, 0, 0.3);
+        }
+
+        /* 頁尾 Footer */
+        .site-footer { background: var(--night-sky-blue); padding: 50px 20px 30px; color: #fff; position: relative; z-index: 10; border-top: 5px solid var(--accent-gold); margin-top: auto; }
+        .footer-content { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 30px;}
+        .footer-logo { font-size: 1.4rem; font-weight: 900; color: var(--accent-lime); margin-bottom: 10px; letter-spacing: 1px;}
+        .footer-col p { color: #A0B0AD; line-height: 1.6; font-size: 0.95rem; font-weight: 500;}
+        .footer-bottom { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); color: #A0B0AD; font-size: 0.9rem; font-weight: 600;}
+
+        @media (max-width: 900px) { 
+            .checkout-container { grid-template-columns: 1fr; gap: 30px;} .checkout-card{ padding: 30px;} 
+            .nav-back { left: 20px; padding: 6px 12px; font-size: 0.9rem;}
+        }
+    </style>
+</head>
+<body>
+
+    <div class="perspective-bg">
+        <div class="skyline" id="bg-skyline"></div>
+        <div class="bridge-floor" id="bg-bridge"></div>
+    </div>
+
+    <nav class="top-nav">
+        <a href="javascript:history.back()" class="nav-back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            返回修改
+        </a>
+        <div class="nav-logo">🌌 2027 星空探險計畫 | 安全結帳中心</div>
+    </nav>
+
+    <main>
+        <div class="checkout-container">
+            
+            <div class="checkout-card">
+                <div class="step-indicator">
+                    <div class="step done"><div class="step-num">✔</div> 填寫資料</div>
+                    <div class="step-line active"></div>
+                    <div class="step active"><div class="step-num">2</div> 確認繳費</div>
+                    <div class="step-line"></div>
+                    <div class="step"><div class="step-num">3</div> 報名完成</div>
+                </div>
+
+                <h2 class="section-title">選擇付款方式</h2>
+                <div class="payment-methods">
+                    <div class="method-label selected">💳 信用卡/金融卡</div>
+                    <div class="method-label">📱 LINE Pay</div>
+                    <div class="method-label">🏦 ATM 轉帳</div>
+                </div>
+
+                <form id="paymentForm">
+                    <div class="form-group">
+                        <label>付款帳號 / 卡號</label>
+                        <input type="text" required placeholder="0000 0000 0000 0000" maxlength="19">
+                    </div>
+                    <div class="form-group">
+                        <label>持卡人姓名</label>
+                        <input type="text" required placeholder="如：WANG TA MING" style="font-family: 'Noto Sans TC', sans-serif;">
+                    </div>
+                    <div class="row-2">
+                        <div class="form-group">
+                            <label>有效期限</label>
+                            <input type="text" placeholder="MM/YY" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label>安全碼 (CVV)</label>
+                            <input type="password" placeholder="123" maxlength="3">
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn" id="payBtn">確認結帳 NT$ <span id="btnAmount">0</span></button>
+                    <p id="demoNotice" style="display:none; margin-top:14px; padding:10px 14px; border-radius:8px; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18); font-size:0.85rem; line-height:1.6; text-align:center;">
+                        作品集展示模式：資料未實際送出
+                    </p>
+                </form>
+            </div>
+
+            <div class="checkout-card" style="background: rgba(255,255,255,0.85); border: 1px solid #fff;">
+                <h2 class="section-title">您的訂單明細</h2>
+                
+                <div class="order-row">
+                    <span class="label">參賽者姓名</span>
+                    <span class="value" id="summaryName">載入中...</span>
+                </div>
+                <div class="order-row">
+                    <span class="label">聯絡電話</span>
+                    <span class="value" id="summaryPhone">載入中...</span>
+                </div>
+                <div class="order-row">
+                    <span class="label">電子信箱</span>
+                    <span class="value" id="summaryEmail">載入中...</span>
+                </div>
+                <div class="order-row">
+                    <span class="label">物資寄送地址</span>
+                    <span class="value" id="summaryAddress">載入中...</span>
+                </div>
+                <div class="order-row">
+                    <span class="label">報名賽事</span>
+                    <span class="value" style="color: var(--primary-teal);">2027 星空探險計畫</span>
+                </div>
+                <div class="order-row">
+                    <span class="label">參賽組別</span>
+                    <span class="value" id="summaryGroup">載入中...</span>
+                </div>
+                
+                <div class="order-total">
+                    <span class="label">總計金額</span>
+                    <span class="value" id="summaryTotal">NT$ 0</span>
+                </div>
+                
+                <div class="security-badge">
+                    <span style="font-size: 1.5rem;">🛡️</span>
+                    <div>
+                        本系統使用 SSL 256-bit 最高等級加密，您的交易資料安全無虞。點擊結帳即代表您同意大會的參賽聲明與退費規範。
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <div class="footer-logo">🌌 2027 星空探險計畫</div>
+                <p>亞洲最具指標性的低碳光影路跑</p>
+            </div>
+            <div class="footer-col" style="text-align: right;">
+                <p>主辦單位：高雄市政府</p>
+                <p>客服專線：0800-123-456</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Copyright © 2027 Kaohsiung Starry Sky Adventure Run. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 付款方式點擊切換
+            const paymentMethods = document.querySelectorAll('.method-label');
+            paymentMethods.forEach(method => {
+                method.addEventListener('click', function() {
+                    paymentMethods.forEach(m => m.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+
+            // 讀取訂單資料
+            const runnerData = JSON.parse(localStorage.getItem('runnerData'));
+            
+            if (!runnerData) {
+                alert('查無訂單資料，即將為您導回首頁重新填寫。');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('summaryName').textContent = runnerData.name;
+            document.getElementById('summaryEmail').textContent = runnerData.email;
+            document.getElementById('summaryPhone').textContent = runnerData.phone || '未提供'; 
+            document.getElementById('summaryAddress').textContent = runnerData.address || '未提供'; 
+            document.getElementById('summaryGroup').textContent = runnerData.groupText;
+            
+            let totalAmount = 0;
+            if (runnerData.groupValue === '10k') totalAmount = 1050;
+            else if (runnerData.groupValue === '3k') totalAmount = 950;
+            
+            const formattedAmount = totalAmount.toLocaleString('en-US');
+            document.getElementById('summaryTotal').textContent = `NT$ ${formattedAmount}`;
+            document.getElementById('btnAmount').textContent = formattedAmount;
+
+            // 處理結帳與 API 呼叫
+            document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const payBtn = document.getElementById('payBtn');
+                payBtn.textContent = '授權處理中...請勿關閉視窗';
+                payBtn.style.opacity = '0.7';
+                payBtn.disabled = true;
+
+                // 作品集展示模式：不呼叫任何線上服務，也不送出任何個人資料。
+                // 表單流程與畫面保持原樣，僅將最後一步改為本機模擬。
+                const notice = document.getElementById('demoNotice');
+                if (notice) notice.style.display = 'block';
+
+                setTimeout(() => {
+                    window.location.href = 'success.html';
+                }, 900);
+            });
+        });
+    </script>
+</body>
+</html>
